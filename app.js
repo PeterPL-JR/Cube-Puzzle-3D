@@ -17,22 +17,35 @@ let cameraDirection = new THREE.Vector3();
 const MOVE_SPEED = 0.75;
 const ROTATION_SPEED = toRadians(1);
 
+const WALL_ROTATION_SPEED = toRadians(10);
+const CENTRE_POINT = pointToVector3([0, 0, 0]);
+let rotation = null;
+
 const cubes = [];
 
-const AXISES = [
-    new THREE.Vector3(1, 0, 0),
-    new THREE.Vector3(0, 1, 0),
-    new THREE.Vector3(0, 0, 1)
-];
+const AXISES = {
+    x: new THREE.Vector3(1, 0, 0),
+    y: new THREE.Vector3(0, 1, 0),
+    z: new THREE.Vector3(0, 0, 1)
+};
 
 class CubeWall {
     constructor(axis, dir, name, colour) {
         this.axis = axis;
         this.dir = dir;
         this.name = name;
-        this.colour = colour;
+        this.colour = COLOURS[colour];
     }
 }
+
+const COLOURS = {
+    blue: "#0000FF",
+    green: "#00C413",
+    white: "#ffffff",
+    yellow: "#FFDD00",
+    red: "#FF0000",
+    orange: "#FF6600"
+};
 
 const CUBE_WALLS = [
     new CubeWall("x", +1, "right", "blue"),
@@ -50,7 +63,7 @@ const ROTATION_CLOCKS = {
 };
 
 const TEXTURES = [];
-const textureLoader = new THREE.TextureLoader();
+let started = false;
 
 const EMPTY_WALL = new THREE.MeshBasicMaterial({color: "#242424"});
 
@@ -74,10 +87,27 @@ function init() {
     scene = new THREE.Scene();
     scene.add(camera);
 
+    initKeyboard();
+    initMouse();
+
+    initCube();
+}
+
+function initCube() {
     for(let wall of CUBE_WALLS) {
-        wall.texture = createCubeColourMaterial(wall.colour);
+        loadTexture(wall);
     }
 
+    let interval = setInterval(() => {
+        if(TEXTURES.length >= 6) {
+            initCubeElements();
+            update();
+            clearInterval(interval);
+        }
+    }, 1);
+}
+
+function initCubeElements() {
     let coords = {};
     for(let i = 0; i < 3; i++) {
         let x = i - 1;
@@ -96,17 +126,18 @@ function init() {
             }
         }
     }
+}
 
+function initKeyboard() {
     document.body.onkeydown = function(event) {
         keys[event.key.toUpperCase()] = true;
-        if(event.key == "Enter") {
-            rotateCubePart("top", 1, 1);
-        }
     }
     document.body.onkeyup = function(event) {
         keys[event.key.toUpperCase()] = false;
     }
+}
 
+function initMouse() {
     let oldX = -1;
     let oldY = -1;
 
@@ -123,8 +154,6 @@ function init() {
         oldX = x;
         oldY = y;
     }
-
-    update();
 }
 
 function update() {
@@ -138,6 +167,8 @@ function update() {
     
     if(keys[" "]) moveVertically(MOVE_SPEED);
     if(keys["SHIFT"]) moveVertically(-MOVE_SPEED);
+
+    updateRotation();
 
     setWorldRotation();
 
@@ -176,6 +207,8 @@ function createCube(x, y, z, coords) {
     cube.position.y = y;
     cube.position.z = z;
 
+    cube.basicPosition = [x, y, z];
+
     cube.sides = sides;
     cube.textures = textureObject;
     cube.materials = textures;
@@ -189,9 +222,14 @@ function updateCube(cube) {
         let wall = findCubeWallByName(side);
         coords[wall.axis] = wall.dir;
     }
-    cube.position.x = coords.x;
-    cube.position.y = coords.y;
-    cube.position.z = coords.z;
+
+    let {x, y, z} = coords;
+
+    cube.position.x = x;
+    cube.position.y = y;
+    cube.position.z = z;
+
+    cube.basicPosition = [x, y, z];
 }
 
 function toRadians(deg) {
@@ -229,9 +267,9 @@ function setWorldRotation() {
 
 function rotate(object, point, rotation) {
     let vec3 = pointToVector3(point);
-    rotateAxis(object, vec3, AXISES[0], rotation[0]);
-    rotateAxis(object, vec3, AXISES[1], rotation[1]);
-    rotateAxis(object, vec3, AXISES[2], rotation[2]);
+    rotateAxis(object, vec3, AXISES.x, rotation[0]);
+    rotateAxis(object, vec3, AXISES.y, rotation[1]);
+    rotateAxis(object, vec3, AXISES.z, rotation[2]);
 }
 
 function rotateAxis(object, point, axis, angle) {
@@ -249,23 +287,42 @@ function pointToVector3(point) {
     return new THREE.Vector3(point[0], point[1], point[2]);
 }
 
-function loadTexture(path) {
-    let tex = textureLoader.load(path);
+function loadTexture(wall) {
+    let canvas = document.createElement("canvas");
+    let ctx = canvas.getContext("2d");
+
+    const IMG_SIZE = 16;
+    canvas.width = IMG_SIZE;
+    canvas.height = IMG_SIZE;
+
+    ctx.fillStyle = "#050505";
+    ctx.fillRect(0, 0, IMG_SIZE, IMG_SIZE);
+    ctx.fillStyle = wall.colour;
+    ctx.fillRect(1, 1, IMG_SIZE - 2, IMG_SIZE - 2);
+
+    let img = document.createElement("img");
+    img.src = canvas.toDataURL();
+    img.onload = function() {
+        let material = createImgMaterial(img);
+        wall.texture = material;
+        TEXTURES.push(material);
+    }
+}
+
+function createImgMaterial(img) {
+    return createMaterial(createTexture(img));
+}
+
+function createTexture(img) {
+    let tex = new THREE.Texture(img);
     tex.magFilter = tex.minFilter = THREE.NearestFilter;
     tex.generateMipmaps = false;
+    tex.needsUpdate = true;
     return tex;
 }
 
 function createMaterial(texture) {
     return new THREE.MeshBasicMaterial({map: texture});
-}
-
-function createTextureMaterial(path) {
-    return createMaterial(loadTexture(path));
-}
-
-function createCubeColourMaterial(colourName) {
-    return createTextureMaterial("texture/" + colourName + ".png");
 }
 
 function findCubeWallIndex(axis, dir) {
@@ -313,29 +370,70 @@ function getCubePart(wallName) {
 }
 
 function rotateCubePart(wallName, dir, moves) {
-    moves %= 4;
-    let cubePart = getCubePart(wallName);
-    let rotation = getRotation(wallName, dir, moves);
+    if(rotation) return;
 
-    let axis = getAxisByWallName(wallName);
-    let clock = ROTATION_CLOCKS[axis];
     
-    for(let cube of cubePart) {
+    let cubePart = getCubePart(wallName);
+    let axis = getAxisByWallName(wallName);
+    
+    let rotDir = axis == "z" ? -dir : dir;
+
+    let target = toRadians(90 * rotDir * moves);
+    let speed = WALL_ROTATION_SPEED * rotDir;
+
+    rotation = {target, moves, dir, speed, axis, angle: 0, cubePart};
+}
+
+function updateRotation() {
+    if(rotation) {
+        rotation.angle += rotation.speed;
+
+        let angle = rotation.angle;
+        let target = rotation.target;
+
+        const isFinished = target > 0 ? (angle >= target) : (angle <= target);
+
+        if(isFinished) {
+            rotation.angle = rotation.target;
+            rotateThisWall();
+            finishRotation();
+        } else {
+            rotateThisWall();
+        }
+    }
+}
+
+function rotateThisWall() {
+    for(let cube of rotation.cubePart) {
+        rotateAxis(cube, CENTRE_POINT, AXISES[rotation.axis], rotation.speed);
+    }
+}
+
+function finishRotation() {
+    for(let cube of rotation.cubePart) {
+        cube.position.set(pointToVector3(cube.basicPosition));
+        cube.quaternion.identity();
+    }
+
+     let clock = ROTATION_CLOCKS[rotation.axis];
+
+    for(let cube of rotation.cubePart) {
         for(let i = 0; i < cube.sides.length; i++) {
             let sideName = cube.sides[i];
             if(clock.includes(sideName)) {
                 let index = clock.indexOf(sideName);
-                let nextIndex = getArrayIndex(index, moves * dir, clock.length);
+                let nextIndex = getArrayIndex(index, rotation.moves * rotation.dir, clock.length);
                 let newSideName = clock[nextIndex];
                 cube.sides[i] = newSideName;
             }
         }
         updateCube(cube);
 
-        let newTextures = rotateArray(cube.textures, axis, dir, moves);
+        let newTextures = rotateArray(cube.textures, rotation.axis, rotation.dir, rotation.moves);
         setCubeColours(cube, newTextures);
         cube.textures = newTextures;
     }
+    rotation = null;
 }
 
 function rotateArray(array, axis, dir, moves) {
