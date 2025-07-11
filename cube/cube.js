@@ -56,7 +56,7 @@ function initCubeElements() {
                 coords.z = z;
                 if(!(x == 0 && y == 0 && z == 0)) {
                     let cube = createCube(x, y, z, coords);
-                    scene.add(cube);
+                    cubeObject.add(cube);
                     cubes.push(cube);
                 }
             }

@@ -9,6 +9,8 @@ function init() {
     canvas.width = WIDTH;
     canvas.height = HEIGHT;
 
+    canvas.oncontextmenu = () => false;
+
     renderer = new THREE.WebGLRenderer({canvas});
     renderer.setSize(WIDTH, HEIGHT);
 
@@ -17,6 +19,10 @@ function init() {
     scene = new THREE.Scene();
     scene.add(camera);
 
+    cubeObject = new THREE.Object3D();
+    scene.add(cubeObject);
+    rotateCube(30, -45, 0);
+    
     initKeyboard();
     initMouse();
 
@@ -25,19 +31,8 @@ function init() {
 
 function update() {
     requestAnimationFrame(update);
-    getWorldDirection();
-
-    if(keys["W"]) moveStraight(MOVE_SPEED);
-    if(keys["S"]) moveStraight(-MOVE_SPEED);
-    if(keys["A"]) moveCross(-MOVE_SPEED);
-    if(keys["D"]) moveCross(MOVE_SPEED);
-    
-    if(keys[" "]) moveVertically(MOVE_SPEED);
-    if(keys["SHIFT"]) moveVertically(-MOVE_SPEED);
 
     updateRotation();
-
-    setWorldRotation();
 
     render();
 }

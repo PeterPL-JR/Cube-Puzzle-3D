@@ -51,6 +51,7 @@ function getRotation(wallName, dir, moves) {
 function rotateCubePart(wallName, dir, moves) {
     if(rotation) return;
 
+    if(Math.abs(dir) != 1 || moves <= 0) return;
     
     let cubePart = getCubePart(wallName);
     let axis = getAxisByWallName(wallName);

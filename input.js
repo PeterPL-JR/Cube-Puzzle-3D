@@ -1,5 +1,12 @@
 let keys = {};
 
+let x, y, oldX, oldY;
+let mouseLeftClicked = false;
+let mouseRightClicked = false;
+
+const MOUSE_LEFT_BUTTON = 0;
+const MOUSE_RIGHT_BUTTON = 2;
+
 function initKeyboard() {
     document.body.onkeydown = function(event) {
         keys[event.key.toUpperCase()] = true;
@@ -10,20 +17,51 @@ function initKeyboard() {
 }
 
 function initMouse() {
-    let oldX = -1;
-    let oldY = -1;
+    canvas.onmousedown = function(event) {
+        updateMouseDown(event);
+    }
+
+    canvas.onmouseup = function(event) {
+        updateMouseUp(event);
+    }
 
     canvas.onmousemove = function(event) {
-        let x = event.clientX - canvas.offsetLeft;
-        let y = event.clientY - canvas.offsetTop;
+        updateMouseMove(event);
+    }
+}
 
-        if(x < oldX) cameraYaw += ROTATION_SPEED;
-        if(x > oldX) cameraYaw -= ROTATION_SPEED;
+function updateMouseDown(event) {
+    if(event.button == MOUSE_LEFT_BUTTON) {
+        mouseLeftClicked = true;
+    }
+    if(event.button == MOUSE_RIGHT_BUTTON) {
+        mouseRightClicked = true;
+        lastPoint = getThisSphere();
+    }
+}
 
-        if(y < oldY) cameraPitch += ROTATION_SPEED;
-        if(y > oldY) cameraPitch -= ROTATION_SPEED;
+function updateMouseUp(event) {
+    if(event.button == MOUSE_LEFT_BUTTON) {
+        mouseLeftClicked = false;
+    }
+    if(event.button == MOUSE_RIGHT_BUTTON) {
+        mouseRightClicked = false;
+    }
+}
 
+function updateMouseMove(event) {
+    x = event.clientX - canvas.offsetLeft;
+    y = event.clientY - canvas.offsetTop;
+
+    if(!oldX || !oldY) {
         oldX = x;
         oldY = y;
     }
+
+    if(mouseRightClicked) {
+        rotateView();
+    }
+
+    oldX = x;
+    oldY = y;
 }
