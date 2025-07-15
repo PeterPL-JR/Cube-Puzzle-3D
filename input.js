@@ -32,6 +32,7 @@ function initMouse() {
 
 function updateMouseDown(event) {
     if(event.button == MOUSE_LEFT_BUTTON) {
+        if(rotation || mouseLeftClicked) return;
         mouseLeftClicked = true;
     }
     if(event.button == MOUSE_RIGHT_BUTTON) {
@@ -42,7 +43,9 @@ function updateMouseDown(event) {
 
 function updateMouseUp(event) {
     if(event.button == MOUSE_LEFT_BUTTON) {
+        if(rotation || !mouseLeftClicked) return;
         mouseLeftClicked = false;
+        applyCubesSelection();
     }
     if(event.button == MOUSE_RIGHT_BUTTON) {
         mouseRightClicked = false;
@@ -58,6 +61,9 @@ function updateMouseMove(event) {
         oldY = y;
     }
 
+    if(mouseLeftClicked) {
+        selectCube(x, y);
+    }
     if(mouseRightClicked) {
         rotateView();
     }

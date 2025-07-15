@@ -1,11 +1,19 @@
 const cubes = [];
 
+const CENTRE = 0;
+const EDGE = 1;
+const CORNER = 2;
+
 class CubeWall {
     constructor(axis, dir, name, colour) {
         this.axis = axis;
         this.dir = dir;
         this.name = name;
         this.colour = COLOURS[colour];
+
+        let vector = new THREE.Vector3();
+        vector[this.axis] = dir;
+        this.normalVector = vector;
     }
 }
 
@@ -24,7 +32,7 @@ const CUBE_WALLS = [
     new CubeWall("y", +1, "top", "white"),
     new CubeWall("y", -1, "bottom", "yellow"),
     new CubeWall("z", +1, "back", "red"),
-    new CubeWall("z", -1, "front", "orange"),
+    new CubeWall("z", -1, "front", "orange")
 ];
 
 const EMPTY_WALL = new THREE.MeshBasicMaterial({color: "#242424"});
@@ -88,10 +96,7 @@ function createCube(x, y, z, coords) {
     let geom = new THREE.BoxGeometry(SIZE, SIZE, SIZE);
     let cube = new THREE.Mesh(geom, textures);
 
-    cube.position.x = x;
-    cube.position.y = y;
-    cube.position.z = z;
-
+    cube.position.set(x, y, z);
     cube.basicPosition = [x, y, z];
 
     cube.sides = sides;
@@ -102,23 +107,22 @@ function createCube(x, y, z, coords) {
 }
 
 function updateCube(cube) {
-    let coords = {x:0, y:0, z:0};
+    let position = new THREE.Vector3();
     for(let side of cube.sides) {
         let wall = findCubeWallByName(side);
-        coords[wall.axis] = wall.dir;
+        position[wall.axis] = wall.dir;
     }
 
-    let {x, y, z} = coords;
-
-    cube.position.x = x;
-    cube.position.y = y;
-    cube.position.z = z;
-
-    cube.basicPosition = [x, y, z];
+    cube.position.copy(position);
+    cube.basicPosition = vectorToPoint(position);
 }
 
 function findCubeWallIndex(axis, dir) {
     return CUBE_WALLS.indexOf(CUBE_WALLS.find(w => w.axis == axis && w.dir == dir));
+}
+
+function findCubeWallIndexByName(wallName) {
+    return CUBE_WALLS.findIndex(w => w.name == wallName);
 }
 
 function findCubeWallByName(wallName) {
@@ -126,9 +130,22 @@ function findCubeWallByName(wallName) {
 }
 
 function getAxisByWallName(wallName) {
-    return CUBE_WALLS.find(w => w.name == wallName).axis;
+    return findCubeWallByName(wallName).axis;
+}
+
+function getDirByWallName(wallName) {
+    return findCubeWallByName(wallName).dir;
 }
 
 function getCubePart(wallName) {
     return cubes.filter(c => c.sides.includes(wallName));
+}
+
+function getCubeType(cube) {
+    return cube.sides.length - 1;
+}
+
+function getOppositeCubeWallName(wallName) {
+    let wall = CUBE_WALLS.find(w => w.name == wallName);
+    return CUBE_WALLS.find(w => w != wall && w.axis == wall.axis).name;
 }

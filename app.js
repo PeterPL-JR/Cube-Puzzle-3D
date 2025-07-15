@@ -11,6 +11,9 @@ function init() {
 
     canvas.oncontextmenu = () => false;
 
+    initKeyboard();
+    initMouse();
+
     renderer = new THREE.WebGLRenderer({canvas});
     renderer.setSize(WIDTH, HEIGHT);
 
@@ -22,9 +25,6 @@ function init() {
     cubeObject = new THREE.Object3D();
     scene.add(cubeObject);
     rotateCube(30, -45, 0);
-    
-    initKeyboard();
-    initMouse();
 
     initCube();
 }

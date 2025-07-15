@@ -14,7 +14,7 @@ let rotation = null;
 const WALL_ROTATION_SPEED = toRadians(10);
 
 function rotate(object, point, rotation) {
-    let vec3 = getVector3(point);
+    let vec3 = pointToVector(point);
     rotateAxis(object, vec3, AXISES.x, rotation[0]);
     rotateAxis(object, vec3, AXISES.y, rotation[1]);
     rotateAxis(object, vec3, AXISES.z, rotation[2]);
@@ -91,7 +91,7 @@ function rotateThisWall() {
 
 function finishRotation() {
     for(let cube of rotation.cubePart) {
-        cube.position.set(getVector3(cube.basicPosition));
+        cube.position.set(pointToVector(cube.basicPosition));
         cube.quaternion.identity();
     }
 

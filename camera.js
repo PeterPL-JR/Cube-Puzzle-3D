@@ -3,7 +3,7 @@ const SPEED = 3;
 let cameraDirection = new THREE.Vector3();
 let lastPoint = new THREE.Vector3();
 
-const CENTRE_POINT = getVector3([0, 0, 0]);
+const CENTRE_POINT = pointToVector([0, 0, 0]);
 
 function initCamera() {
     camera = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 1, 4000);
@@ -37,11 +37,18 @@ function mapToSphere(mouseX, mouseY, width, height) {
         x /= length;
         y /= length;
     }
-    return getVector3([x, y, z]).normalize();
+    return pointToVector([x, y, z]).normalize();
 }
 
 function getThisSphere() {
     return mapToSphere(x, y, WIDTH, HEIGHT);
+}
+
+function getCameraDirection() {
+    const dir = new THREE.Vector3();
+    camera.getWorldDirection(dir);
+    dir.negate();
+    return dir; 
 }
 
 function rotateCube(x, y, z) {
